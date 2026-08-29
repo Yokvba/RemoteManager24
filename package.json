@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "register": "node slash_commands.js",
+    "web": "node webmanager/server.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0"
+  }
+}

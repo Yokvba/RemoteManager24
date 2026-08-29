@@ -1,0 +1,40 @@
+{
+  "discord": {
+    "clientId": "YourBotUserID",
+    "guildId": "YourServerID",
+    "token": "YourBotToken"
+  },
+  "permissions": {
+    "allowedUserId": "YourOwnUserID"
+  },
+  "socket": {
+    "host": "0.0.0.0",
+    "port": 3000
+  },
+  "minecraft": {
+    "screenName": "mcserver",
+    "serverPath": "/home/jaro/mcserver/",
+    "webUrl": "http://0.0.0.0:3000"
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 3000
+  },
+  "forbiddenCommands": [
+    "rm -rf /",
+    "rm -rf /*",
+    "shutdown /s",
+    "shutdown -s",
+    "reboot",
+    "sudo rm -rf /",
+    "powershell -Command Remove-Item -Recurse -Force /",
+    "format c:",
+    "del /f /s /q C:\\*",
+    "cmd /c del /f /s /q C:\\*",
+    "mkfs.ext4 /dev/sda",
+    "dd if=/dev/zero of=/dev/sda",
+    "chattr +i /",
+    "net user administrator /active:yes",
+    "sc stop KtmRm"
+  ]
+}
