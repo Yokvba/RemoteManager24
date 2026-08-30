@@ -22,6 +22,7 @@
         <div class="topbar">
           <h1>Remote Manager</h1>
           <div class="topbar-right">
+            <button id="settingsBtn" class="settings-btn" type="button" aria-label="Settings">⚙️</button>
             <div class="hamburger-wrap">
               <button id="menuToggle" class="hamburger" type="button" aria-label="Open menu">☰</button>
               <div id="menu" class="menu" aria-label="Navigation menu">
@@ -72,7 +73,7 @@
         <div id="serverPage" class="page-panel hidden">
           <div class="status-box" id="serverStatusBox">
             <span class="status-dot" id="serverStatusDot"></span>
-            <span id="serverStatusText">Checking server status...</span>
+            <span id="serverStatusText">Waiting for Log...</span>
           </div>
 
           <div class="terminal-panel">
@@ -82,19 +83,20 @@
                 <span></span>
                 <span></span>
               </div>
-              <span>Server Console</span>
+              <span>Server Shell</span>
             </div>
-            <pre id="serverOutput">Waiting for server status...</pre>
+            <pre id="serverOutput">Waiting for shell input...</pre>
             <form id="serverCommandForm" class="terminal-form">
               <span class="terminal-prompt">$</span>
               <input id="serverCommandInput" type="text" placeholder="Run a host command..." autocomplete="off" />
               <button type="submit">Send</button>
             </form>
           </div>
-
+          <br>
+          <br>
           <div class="server-status-panel">
             <div class="stat-card">
-              <div class="stat-label"><span aria-hidden="true">�</span> Status</div>
+              <div class="stat-label"><span aria-hidden="true">📶</span> Status</div>
               <div class="stat-value" id="serverStatusValue">N/A</div>
             </div>
             <div class="stat-card">
@@ -110,6 +112,10 @@
               <div class="stat-value" id="serverRamValue">N/A</div>
             </div>
             <div class="stat-card stat-card-wide">
+              <div class="stat-label"><span aria-hidden="true">⏱️</span> Uptime</div>
+              <div class="stat-value" id="serverUptimeValue">N/A</div>
+            </div>
+            <div class="stat-card stat-card-wide">
               <div class="stat-label"><span aria-hidden="true">📊</span> Disk Usage</div>
               <div class="stat-value usage-value" id="serverDiskPercent">0%</div>
               <div id="serverDiskInfo" style="font-size: 0.85rem; color: #9ca3af; margin-top: 4px;">0 GB / 0 GB</div>
@@ -117,6 +123,63 @@
                 <span id="serverDiskBar" style="width: 0%"></span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settingsModal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Settings</h2>
+            <button id="closeSettingsBtn" class="modal-close" type="button">✕</button>
+          </div>
+          <div class="modal-body">
+            <form id="settingsForm">
+              <fieldset>
+                <legend>Socket Configuration</legend>
+                <div class="form-group">
+                  <label for="socketHost">Host:</label>
+                  <input type="text" id="socketHost" name="socket.host" required />
+                </div>
+                <div class="form-group">
+                  <label for="socketPort">Port:</label>
+                  <input type="number" id="socketPort" name="socket.port" required />
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Minecraft Configuration</legend>
+                <div class="form-group">
+                  <label for="minecraftScreenName">Screen Name:</label>
+                  <input type="text" id="minecraftScreenName" name="minecraft.screenName" required />
+                </div>
+                <div class="form-group">
+                  <label for="minecraftServerPath">Server Path:</label>
+                  <input type="text" id="minecraftServerPath" name="minecraft.serverPath" required />
+                </div>
+                <div class="form-group">
+                  <label for="minecraftWebUrl">Web URL:</label>
+                  <input type="text" id="minecraftWebUrl" name="minecraft.webUrl" required />
+                </div>
+              </fieldset>
+
+              <fieldset>
+                <legend>Web Configuration</legend>
+                <div class="form-group">
+                  <label for="webHost">Host:</label>
+                  <input type="text" id="webHost" name="web.host" required />
+                </div>
+                <div class="form-group">
+                  <label for="webPort">Port:</label>
+                  <input type="number" id="webPort" name="web.port" required />
+                </div>
+              </fieldset>
+
+              <div class="modal-footer">
+                <button type="button" id="cancelSettingsBtn" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Save Settings</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -145,6 +208,7 @@
       const serverDiskPercent = document.getElementById('serverDiskPercent');
       const serverDiskBar = document.getElementById('serverDiskBar');
       const serverDiskInfo = document.getElementById('serverDiskInfo');
+      const serverUptimeValue = document.getElementById('serverUptimeValue');
       const outputEl = document.getElementById('output');
       const serverOutputEl = document.getElementById('serverOutput');
       const serverCommandForm = document.getElementById('serverCommandForm');
@@ -156,6 +220,11 @@
       const consoleInput = document.getElementById('consoleInput');
       const usernameInput = document.getElementById('usernameInput');
       const passwordInput = document.getElementById('passwordInput');
+      const settingsBtn = document.getElementById('settingsBtn');
+      const settingsModal = document.getElementById('settingsModal');
+      const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+      const cancelSettingsBtn = document.getElementById('cancelSettingsBtn');
+      const settingsForm = document.getElementById('settingsForm');
 
       const LIVE_REFRESH_MS = 1500;      let lastStatusData = null;
       function setStatus(online) {
@@ -248,6 +317,7 @@
         serverPingValue.textContent = hostStatus.ping || 'N/A';
         serverCpuValue.textContent = hostStatus.cpu || 'N/A';
         serverRamValue.textContent = hostStatus.ram || 'N/A';
+        serverUptimeValue.textContent = hostStatus.uptime || 'N/A';
 
         const percent = Number(hostStatus.diskPercent ?? 0);
         const safePercent = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0;
@@ -308,6 +378,33 @@
         menu.classList.toggle('open');
       }
 
+      async function loadSettings() {
+        try {
+          const response = await fetch('/config.json');
+          const config = await response.json();
+
+          document.getElementById('socketHost').value = config.socket?.host || '';
+          document.getElementById('socketPort').value = config.socket?.port || '';
+          document.getElementById('minecraftScreenName').value = config.minecraft?.screenName || '';
+          document.getElementById('minecraftServerPath').value = config.minecraft?.serverPath || '';
+          document.getElementById('minecraftWebUrl').value = config.minecraft?.webUrl || '';
+          document.getElementById('webHost').value = config.web?.host || '';
+          document.getElementById('webPort').value = config.web?.port || '';
+        } catch (error) {
+          console.error('Failed to load settings:', error);
+          alert('Failed to load settings.');
+        }
+      }
+
+      function openSettings() {
+        loadSettings();
+        settingsModal.classList.remove('hidden');
+      }
+
+      function closeSettings() {
+        settingsModal.classList.add('hidden');
+      }
+
       document.addEventListener('click', (event) => {
         if (!menu.contains(event.target) && !menuToggle.contains(event.target)) {
           menu.classList.remove('open');
@@ -349,6 +446,53 @@
       menuToggle.addEventListener('click', toggleMenu);
       minecraftPageBtn.addEventListener('click', () => showPage('minecraft'));
       serverPageBtn.addEventListener('click', () => showPage('server'));
+
+      settingsBtn.addEventListener('click', openSettings);
+      closeSettingsBtn.addEventListener('click', closeSettings);
+      cancelSettingsBtn.addEventListener('click', closeSettings);
+
+      settingsModal.addEventListener('click', (event) => {
+        if (event.target === settingsModal) {
+          closeSettings();
+        }
+      });
+
+      settingsForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(settingsForm);
+        const updates = {};
+
+        for (const [key, value] of formData.entries()) {
+          const keys = key.split('.');
+          let obj = updates;
+          for (let i = 0; i < keys.length - 1; i++) {
+            if (!obj[keys[i]]) {
+              obj[keys[i]] = {};
+            }
+            obj = obj[keys[i]];
+          }
+          obj[keys[keys.length - 1]] = value.includes('.') && !isNaN(value) ? parseFloat(value) : isNaN(value) ? value : Number(value);
+        }
+
+        try {
+          const response = await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            alert('Settings saved successfully!');
+            closeSettings();
+          } else {
+            alert('Failed to save settings: ' + (result.message || 'Unknown error'));
+          }
+        } catch (error) {
+          alert('Error saving settings: ' + error.message);
+        }
+      });
 
       startBtn.addEventListener('click', () => actionRequest('/api/start', 'Start output'));
       stopBtn.addEventListener('click', () => actionRequest('/api/stop', 'Stop output'));

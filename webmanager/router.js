@@ -98,6 +98,28 @@ export async function handleRequest(req, res) {
     return;
   }
 
+  if (req.method === 'GET' && pathname === '/config.json') {
+    const user = requireAuth(req, res);
+    if (!user) return;
+    
+    try {
+      const configPath = path.join(__dirname, '..', 'config.json');
+      const config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+      
+      // Remove sensitive fields
+      const safeConfig = { ...config };
+      delete safeConfig.discord;
+      delete safeConfig.permissions;
+      delete safeConfig.forbiddenCommands;
+      delete safeConfig.web.users;
+      
+      sendJson(res, 200, safeConfig);
+    } catch (error) {
+      sendJson(res, 400, { success: false, message: error.message });
+    }
+    return;
+  }
+
   if (req.method === 'POST' && pathname === '/api/login') {
     try {
       const body = await readBody(req);
@@ -218,6 +240,49 @@ export async function handleRequest(req, res) {
       const body = await readBody(req);
       const output = await sendConsoleCommand(body.command || '');
       sendJson(res, 200, { success: true, output });
+    } catch (error) {
+      sendJson(res, 400, { success: false, message: error.message });
+    }
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/config') {
+    const user = requireAuth(req, res);
+    if (!user) return;
+
+    try {
+      const body = await readBody(req);
+      
+      // Prevent modification of forbidden commands, discord, and permissions
+      if (body.forbiddenCommands || body.discord || body.permissions) {
+        sendJson(res, 403, { success: false, message: 'Cannot modify forbidden commands, discord, or permissions.' });
+        return;
+      }
+
+      // Read current config
+      const configPath = path.join(__dirname, '..', 'config.json');
+      const currentConfig = JSON.parse(await fs.readFile(configPath, 'utf8'));
+
+      // Recursively merge updates
+      function mergeObjects(target, updates) {
+        for (const key in updates) {
+          if (typeof updates[key] === 'object' && updates[key] !== null && !Array.isArray(updates[key])) {
+            if (typeof target[key] !== 'object' || target[key] === null || Array.isArray(target[key])) {
+              target[key] = {};
+            }
+            mergeObjects(target[key], updates[key]);
+          } else {
+            target[key] = updates[key];
+          }
+        }
+      }
+
+      mergeObjects(currentConfig, body);
+
+      // Write updated config back
+      await fs.writeFile(configPath, JSON.stringify(currentConfig, null, 2), 'utf8');
+      
+      sendJson(res, 200, { success: true, message: 'Configuration updated successfully.' });
     } catch (error) {
       sendJson(res, 400, { success: false, message: error.message });
     }

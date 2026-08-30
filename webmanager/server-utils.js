@@ -84,6 +84,21 @@ export function getRamUsage() {
   };
 }
 
+export function getUptime() {
+  const seconds = os.uptime();
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`;
+  } else if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else {
+    return `${minutes}m`;
+  }
+}
+
 export async function getRawNetworkStats() {
   const platform = os.platform();
 
@@ -210,6 +225,7 @@ export async function getHostStatus() {
     const ram = getRamUsage();
     const network = await getNetworkUsage();
     const disk = await getDiskUsage();
+    const uptime = getUptime();
 
     return {
       socket,
@@ -221,6 +237,7 @@ export async function getHostStatus() {
       diskUsed: disk.diskUsed,
       diskTotal: disk.diskTotal,
       diskPercent: disk.diskPercent,
+      uptime: uptime,
       network: `↓ ${formatNetworkRate(network.down)} / ↑ ${formatNetworkRate(network.up)}`,
     };
   } catch {
@@ -234,6 +251,7 @@ export async function getHostStatus() {
       diskUsed: 0,
       diskTotal: 0,
       diskPercent: 0,
+      uptime: getUptime(),
       network: 'N/A',
     };
   }
