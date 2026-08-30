@@ -1,18 +1,4 @@
-import http from 'node:http';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { exec, execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-
-const execAsync = promisify(exec);
-const execFileAsync = promisify(execFile);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const config = JSON.parse(await fs.readFile(new URL('../config.json', import.meta.url), 'utf8'));
-const { screenName, serverPath, webUrl } = config.minecraft;
-const { host = '0.0.0.0', port = 3000 } = config.web || {};
+export * from './index.js';
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -93,6 +79,31 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload, null, 2));
 }
 
+function getSessionId(req) {
+  const cookieHeader = req.headers.cookie || '';
+  const cookie = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith('sessionId='));
+
+  return cookie ? decodeURIComponent(cookie.slice('sessionId='.length)) : null;
+}
+
+function getCurrentUser(req) {
+  const sessionId = getSessionId(req);
+  return sessionId ? sessionStore.get(sessionId) || null : null;
+}
+
+function requireAuth(req, res) {
+  const user = getCurrentUser(req);
+  if (!user) {
+    sendJson(res, 401, { success: false, message: 'Authentication required.' });
+    return null;
+  }
+
+  return user;
+}
+
 async function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -126,7 +137,7 @@ async function serveStaticFile(req, res, relativePath) {
   }
 
   const extension = path.extname(filePath).toLowerCase();
-  if (['.js', '.css'].includes(extension)) {
+  if (extension === '.js') {
     sendJson(res, 403, { success: false, message: 'Direct asset access is not allowed.' });
     return;
   }
@@ -158,11 +169,68 @@ export function startWebServer() {
     }
 
     if (req.method === 'GET' && pathname === '/styles.css') {
-      sendJson(res, 403, { success: false, message: 'Direct asset access is not allowed.' });
+      await serveStaticFile(req, res, '/styles.css');
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/login') {
+      try {
+        const body = await readBody(req);
+        const username = String(body.username || '').trim();
+        const password = String(body.password || '').trim();
+
+        const user = (config.web?.users || []).find(
+          (entry) => entry.username === username && entry.password === password
+        );
+
+        if (!user) {
+          sendJson(res, 401, { success: false, message: 'Invalid username or password.' });
+          return;
+        }
+
+        const sessionId = randomUUID();
+        sessionStore.set(sessionId, username);
+
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Set-Cookie': `sessionId=${sessionId}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400`,
+        });
+        res.end(JSON.stringify({ success: true, user: username }));
+      } catch (error) {
+        sendJson(res, 400, { success: false, message: error.message });
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/logout') {
+      const sessionId = getSessionId(req);
+
+      if (sessionId) {
+        sessionStore.delete(sessionId);
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Set-Cookie': 'sessionId=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0',
+      });
+      res.end(JSON.stringify({ success: true, message: 'Logged out.' }));
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/session') {
+      const user = getCurrentUser(req);
+      sendJson(res, 200, {
+        success: true,
+        loggedIn: Boolean(user),
+        user: user || null,
+      });
       return;
     }
 
     if (req.method === 'GET' && pathname === '/api/status') {
+      const user = requireAuth(req, res);
+      if (!user) return;
+
       const online = await isServerOnline();
       sendJson(res, 200, {
         success: true,
@@ -176,12 +244,18 @@ export function startWebServer() {
     }
 
     if (req.method === 'GET' && pathname === '/api/logs') {
+      const user = requireAuth(req, res);
+      if (!user) return;
+
       const output = await getLatestLogs();
       sendJson(res, 200, { success: true, output });
       return;
     }
 
     if (req.method === 'POST' && pathname === '/api/start') {
+      const user = requireAuth(req, res);
+      if (!user) return;
+
       const command = `cd ${serverPath} && ./start.sh`;
       const output = await runCommand(command);
       sendJson(res, 200, { success: true, output, screenName, command });
@@ -189,6 +263,9 @@ export function startWebServer() {
     }
 
     if (req.method === 'POST' && pathname === '/api/stop') {
+      const user = requireAuth(req, res);
+      if (!user) return;
+
       const online = await isServerOnline();
       const output = online
         ? await runCommand(`screen -X -S ${screenName} quit`)
@@ -199,6 +276,9 @@ export function startWebServer() {
     }
 
     if (req.method === 'POST' && pathname === '/api/console') {
+      const user = requireAuth(req, res);
+      if (!user) return;
+
       try {
         const body = await readBody(req);
         const output = await sendConsoleCommand(body.command || '');

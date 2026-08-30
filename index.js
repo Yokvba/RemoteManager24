@@ -1,7 +1,7 @@
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import fs from 'node:fs';
 import commands from './commands/index.js';
-import { startWebServer } from './webmanager/server.js';
+import { startWebServer } from './webmanager/index.js';
 
 const config = JSON.parse(fs.readFileSync(new URL('./config.json', import.meta.url), 'utf8'));
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });

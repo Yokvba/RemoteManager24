@@ -7,7 +7,7 @@ const logsBtn = document.getElementById('logsBtn');
 const consoleForm = document.getElementById('consoleForm');
 const consoleInput = document.getElementById('consoleInput');
 
-const LIVE_REFRESH_MS = 1000;
+const LIVE_REFRESH_MS = 1500;
 
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, {

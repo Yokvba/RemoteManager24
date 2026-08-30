@@ -4,195 +4,162 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Remote Manager Web</title>
-    <style>
-      :root {
-        --bg: #111827;
-        --panel: #1f2937;
-        --panel-alt: #0f172a;
-        --accent: #22c55e;
-        --danger: #ef4444;
-        --text: #e5e7eb;
-        --muted: #9ca3af;
-        --shadow: rgba(0, 0, 0, 0.3);
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: Arial, sans-serif;
-        background: linear-gradient(135deg, var(--bg), var(--panel-alt));
-        color: var(--text);
-      }
-
-      .container {
-        width: min(900px, calc(100% - 32px));
-        margin: 48px auto;
-        padding: 24px;
-        background: rgba(17, 24, 39, 0.85);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 18px;
-        box-shadow: 0 16px 32px var(--shadow);
-      }
-
-      h1, h2 {
-        margin-top: 0;
-      }
-
-      .status-box {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin: 20px 0;
-        padding: 14px 16px;
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .status-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #f59e0b;
-        box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
-      }
-
-      .controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 24px;
-      }
-
-      button {
-        border: none;
-        border-radius: 10px;
-        padding: 10px 18px;
-        font-weight: 700;
-        cursor: pointer;
-        transition: transform 0.15s ease, opacity 0.15s ease;
-        background: #3b82f6;
-        color: white;
-      }
-
-      button:hover {
-        transform: translateY(-1px);
-        opacity: 0.95;
-      }
-
-      button.danger {
-        background: var(--danger);
-      }
-
-      .panel {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 16px;
-        margin-top: 20px;
-      }
-
-      #consoleForm {
-        display: flex;
-        gap: 12px;
-        margin-top: 8px;
-      }
-
-      #consoleInput {
-        flex: 1;
-        padding: 12px 14px;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(15, 23, 42, 0.8);
-        color: var(--text);
-      }
-
-      .output-panel pre {
-        margin: 0;
-        min-height: 180px;
-        max-height: 420px;
-        overflow: auto;
-        white-space: pre-wrap;
-        word-break: break-word;
-        padding: 14px;
-        border-radius: 10px;
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #dbeafe;
-      }
-
-      @media (max-width: 640px) {
-        .container {
-          padding: 18px;
-        }
-
-        #consoleForm {
-          flex-direction: column;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="container">
-      <h1>Remote Manager</h1>
-
-      <div class="status-box" id="statusBox">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Checking server status...</span>
-      </div>
-
-      <div class="controls">
-        <button id="startBtn">Start</button>
-        <button id="stopBtn" class="danger">Stop</button>
-        <button id="logsBtn">Current Log</button>
-      </div>
-
-      <div class="panel">
-        <h2>Server Console</h2>
-        <form id="consoleForm">
-          <input id="consoleInput" type="text" placeholder="Type a command here" autocomplete="off" />
-          <button type="submit">Send</button>
+      <div id="loginView" class="login-box">
+        <h1>Remote Manager Login</h1>
+        <form id="loginForm" class="login-form">
+          <input id="usernameInput" type="text" placeholder="Username" autocomplete="username" required />
+          <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" required />
+          <button type="submit">Log in</button>
         </form>
+        <p id="loginError" style="color: #fca5a5; margin-bottom: 0;"></p>
       </div>
 
-      <div class="panel output-panel">
-        <h2>Output</h2>
-        <pre id="output">Waiting for server status...</pre>
+      <div id="appView" class="hidden">
+        <div class="topbar">
+          <h1>Remote Manager</h1>
+          <div class="topbar-right">
+            <div class="hamburger-wrap">
+              <button id="menuToggle" class="hamburger" type="button" aria-label="Open menu">☰</button>
+              <div id="menu" class="menu" aria-label="Navigation menu">
+                <button id="minecraftPageBtn" class="menu-item" type="button">
+                  <span aria-hidden="true">🎮</span>
+                  <span>Minecraft</span>
+                </button>
+                <button id="serverPageBtn" class="menu-item" type="button">
+                  <span aria-hidden="true">🖥️</span>
+                  <span>Server stuff</span>
+                </button>
+              </div>
+            </div>
+            <button id="logoutBtn" class="logout-btn" type="button">Log out</button>
+          </div>
+        </div>
+
+        <div id="minecraftPage" class="page-panel">
+          <div class="status-box" id="statusBox">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Checking Minecraft status...</span>
+          </div>
+
+          <div class="controls">
+            <button id="startBtn" type="button">Start</button>
+            <button id="stopBtn" class="danger" type="button">Stop</button>
+            <button id="logsBtn" type="button">Current Log</button>
+          </div>
+
+          <div class="terminal-panel">
+            <div class="terminal-header">
+              <div class="terminal-window-controls" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <span>Minecraft Console</span>
+            </div>
+            <pre id="output">Waiting for status...</pre>
+            <form id="consoleForm" class="terminal-form">
+              <span class="terminal-prompt">&gt;</span>
+              <input id="consoleInput" type="text" placeholder="Type a command here" autocomplete="off" />
+              <button type="submit">Send</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="serverPage" class="page-panel hidden">
+          <div class="status-box" id="serverStatusBox">
+            <span class="status-dot" id="serverStatusDot"></span>
+            <span id="serverStatusText">Checking server status...</span>
+          </div>
+
+          <div class="terminal-panel">
+            <div class="terminal-header">
+              <div class="terminal-window-controls" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <span>Server Console</span>
+            </div>
+            <pre id="serverOutput">Waiting for server status...</pre>
+            <form id="serverCommandForm" class="terminal-form">
+              <span class="terminal-prompt">$</span>
+              <input id="serverCommandInput" type="text" placeholder="Run a host command..." autocomplete="off" />
+              <button type="submit">Send</button>
+            </form>
+          </div>
+
+          <div class="server-status-panel">
+            <div class="stat-card">
+              <div class="stat-label"><span aria-hidden="true">�</span> Status</div>
+              <div class="stat-value" id="serverStatusValue">N/A</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><span aria-hidden="true">🏓</span> Ping</div>
+              <div class="stat-value" id="serverPingValue">N/A</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><span aria-hidden="true">🖥️</span> CPU</div>
+              <div class="stat-value" id="serverCpuValue">N/A</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label"><span aria-hidden="true">🧠</span> RAM</div>
+              <div class="stat-value" id="serverRamValue">N/A</div>
+            </div>
+            <div class="stat-card stat-card-wide">
+              <div class="stat-label"><span aria-hidden="true">📊</span> Disk Usage</div>
+              <div class="stat-value usage-value" id="serverDiskPercent">0%</div>
+              <div id="serverDiskInfo" style="font-size: 0.85rem; color: #9ca3af; margin-top: 4px;">0 GB / 0 GB</div>
+              <div class="usage-bar">
+                <span id="serverDiskBar" style="width: 0%"></span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <script>
+      const loginView = document.getElementById('loginView');
+      const appView = document.getElementById('appView');
+      const loginForm = document.getElementById('loginForm');
+      const loginError = document.getElementById('loginError');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const menuToggle = document.getElementById('menuToggle');
+      const menu = document.getElementById('menu');
+      const minecraftPageBtn = document.getElementById('minecraftPageBtn');
+      const serverPageBtn = document.getElementById('serverPageBtn');
+      const minecraftPage = document.getElementById('minecraftPage');
+      const serverPage = document.getElementById('serverPage');
       const statusText = document.getElementById('statusText');
       const statusDot = document.getElementById('statusDot');
+      const serverStatusText = document.getElementById('serverStatusText');
+      const serverStatusDot = document.getElementById('serverStatusDot');
+      const serverStatusValue = document.getElementById('serverStatusValue');
+      const serverPingValue = document.getElementById('serverPingValue');
+      const serverCpuValue = document.getElementById('serverCpuValue');
+      const serverRamValue = document.getElementById('serverRamValue');
+      const serverDiskPercent = document.getElementById('serverDiskPercent');
+      const serverDiskBar = document.getElementById('serverDiskBar');
+      const serverDiskInfo = document.getElementById('serverDiskInfo');
       const outputEl = document.getElementById('output');
+      const serverOutputEl = document.getElementById('serverOutput');
+      const serverCommandForm = document.getElementById('serverCommandForm');
+      const serverCommandInput = document.getElementById('serverCommandInput');
       const startBtn = document.getElementById('startBtn');
       const stopBtn = document.getElementById('stopBtn');
       const logsBtn = document.getElementById('logsBtn');
       const consoleForm = document.getElementById('consoleForm');
       const consoleInput = document.getElementById('consoleInput');
+      const usernameInput = document.getElementById('usernameInput');
+      const passwordInput = document.getElementById('passwordInput');
 
-      const LIVE_REFRESH_MS = 1000;
-
-      async function fetchJson(url, options = {}) {
-        const response = await fetch(url, {
-          headers: { 'Content-Type': 'application/json' },
-          ...options,
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Request failed.');
-        }
-
-        return data;
-      }
-
+      const LIVE_REFRESH_MS = 1500;      let lastStatusData = null;
       function setStatus(online) {
-        statusText.textContent = online ? 'Server is online' : 'Server is offline';
+        statusText.textContent = online ? 'Minecraft is online' : 'Minecraft is offline';
         statusText.style.color = online ? '#86efac' : '#fca5a5';
         statusDot.style.background = online ? '#22c55e' : '#ef4444';
         statusDot.style.boxShadow = online
@@ -200,8 +167,94 @@
           : '0 0 10px rgba(239, 68, 68, 0.8)';
       }
 
+      function setServerStatus(online) {
+        serverStatusText.textContent = online ? 'Server is online' : 'Server is offline';
+        serverStatusText.style.color = online ? '#86efac' : '#fca5a5';
+        serverStatusDot.style.background = online ? '#22c55e' : '#ef4444';
+        serverStatusDot.style.boxShadow = online
+          ? '0 0 10px rgba(34, 197, 94, 0.8)'
+          : '0 0 10px rgba(239, 68, 68, 0.8)';
+      }
+
       function setOutput(value) {
         outputEl.textContent = value || 'No output returned.';
+      }
+
+      function setServerOutput(value) {
+        serverOutputEl.textContent = value || 'No output returned.';
+      }
+
+      function showPage(pageName) {
+        const pageMap = {
+          minecraft: minecraftPage,
+          server: serverPage,
+        };
+
+        Object.entries(pageMap).forEach(([name, page]) => {
+          page.classList.toggle('hidden', name !== pageName);
+        });
+
+        menu.classList.remove('open');
+      }
+
+      function setAuthenticated(user) {
+        const isLoggedIn = Boolean(user);
+        loginView.classList.toggle('hidden', isLoggedIn);
+        appView.classList.toggle('hidden', !isLoggedIn);
+
+        if (isLoggedIn) {
+          setOutput(`Logged in as ${user}.\n\nWaiting for live server status...`);
+        } else {
+          setOutput('Please log in to manage the server.');
+          setStatus(false);
+        }
+      }
+
+      async function fetchJson(url, options = {}) {
+        const response = await fetch(url, {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          ...options,
+        });
+
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : {};
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Request failed.');
+        }
+
+        return data;
+      }
+
+      async function checkSession() {
+        try {
+          const data = await fetchJson('/api/session');
+          setAuthenticated(data.user);
+
+          if (data.loggedIn) {
+            await refreshLiveData();
+          }
+        } catch (error) {
+          setAuthenticated(null);
+        }
+      }
+
+      function renderServerStatusSummary(statusData = {}) {
+        const hostStatus = statusData.hostStatus || {};
+        const online = Boolean(statusData.online);
+
+        serverStatusValue.textContent = hostStatus.status || (online ? 'Online' : 'Offline');
+        serverPingValue.textContent = hostStatus.ping || 'N/A';
+        serverCpuValue.textContent = hostStatus.cpu || 'N/A';
+        serverRamValue.textContent = hostStatus.ram || 'N/A';
+
+        const percent = Number(hostStatus.diskPercent ?? 0);
+        const safePercent = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0;
+        serverDiskPercent.textContent = `${safePercent}%`;
+        serverDiskBar.style.width = `${safePercent}%`;
+        serverDiskBar.style.background = safePercent >= 80 ? '#f87171' : safePercent >= 60 ? '#fbbf24' : '#4ade80';
+        serverDiskInfo.textContent = `${hostStatus.diskUsed || 0} GB / ${hostStatus.diskTotal || 0} GB`;
       }
 
       async function refreshLiveData() {
@@ -211,32 +264,136 @@
             fetchJson('/api/logs'),
           ]);
 
-          setStatus(statusData.online);
-          setOutput(`Server status: ${statusData.online ? 'Online' : 'Offline'}\n\nLatest log output:\n\n${logData.output || 'No output returned.'}`);
+          lastStatusData = statusData;
+
+          const minecraftOnline = Boolean(statusData.online || statusData.hostOnline || statusData.hostStatus?.online);
+          const serverOnline = Boolean(statusData.hostOnline || statusData.hostStatus?.online || statusData.online);
+
+          setStatus(minecraftOnline);
+          setServerStatus(serverOnline);
+          renderServerStatusSummary(statusData);
+
+          if (!minecraftPage.classList.contains('hidden')) {
+            setOutput(logData.output || 'No output returned.');
+          }
         } catch (error) {
           setStatus(false);
-          setOutput(`Live update failed.\n${error.message}`);
+          setServerStatus(false);
+          renderServerStatusSummary({ online: false, hostStatus: {} });
+
+          if (!minecraftPage.classList.contains('hidden')) {
+            setOutput(`Live update failed.\n${error.message}`);
+          }
+        }
+      }
+
+      async function refreshServerConsole() {
+        if (lastStatusData) {
+          setServerStatus(lastStatusData.online);
+          renderServerStatusSummary(lastStatusData);
         }
       }
 
       async function actionRequest(endpoint, label) {
         try {
           const data = await fetchJson(endpoint, { method: 'POST' });
-          setOutput(`${label}\n\n${data.output || 'No output returned.'}`);
+          setServerOutput(`${label}\n\n${data.output || 'No output returned.'}`);
           await refreshLiveData();
         } catch (error) {
-          setOutput(`${label} failed.\n${error.message}`);
+          setServerOutput(`${label} failed.\n${error.message}`);
         }
       }
 
+      function toggleMenu() {
+        menu.classList.toggle('open');
+      }
+
+      document.addEventListener('click', (event) => {
+        if (!menu.contains(event.target) && !menuToggle.contains(event.target)) {
+          menu.classList.remove('open');
+        }
+      });
+
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        loginError.textContent = '';
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        try {
+          const data = await fetchJson('/api/login', {
+            method: 'POST',
+            body: JSON.stringify({ username, password }),
+          });
+
+          setAuthenticated(data.user);
+          usernameInput.value = '';
+          passwordInput.value = '';
+          await refreshLiveData();
+        } catch (error) {
+          loginError.textContent = error.message;
+        }
+      });
+
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          await fetchJson('/api/logout', { method: 'POST' });
+        } catch (error) {
+          console.error(error);
+        }
+
+        setAuthenticated(null);
+      });
+
+      menuToggle.addEventListener('click', toggleMenu);
+      minecraftPageBtn.addEventListener('click', () => showPage('minecraft'));
+      serverPageBtn.addEventListener('click', () => showPage('server'));
+
       startBtn.addEventListener('click', () => actionRequest('/api/start', 'Start output'));
       stopBtn.addEventListener('click', () => actionRequest('/api/stop', 'Stop output'));
+
       logsBtn.addEventListener('click', async () => {
         try {
           const data = await fetchJson('/api/logs');
           setOutput(`Latest log output\n\n${data.output || 'No output returned.'}`);
         } catch (error) {
           setOutput(`Failed to load logs.\n${error.message}`);
+        }
+      });
+
+      serverCommandInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          serverCommandForm.requestSubmit();
+        }
+      });
+
+      serverCommandForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const command = serverCommandInput.value.trim();
+
+        if (!command) {
+          setServerOutput('No command entered.');
+          return;
+        }
+
+        try {
+          const data = await fetchJson('/api/run', {
+            method: 'POST',
+            body: JSON.stringify({ command }),
+          });
+          setServerOutput(`Command output\n\n${data.output || 'No output returned.'}`);
+          serverCommandInput.value = '';
+        } catch (error) {
+          setServerOutput(`Command failed.\n${error.message}`);
+        }
+      });
+
+      consoleInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          consoleForm.requestSubmit();
         }
       });
 
@@ -262,8 +419,17 @@
         }
       });
 
-      refreshLiveData();
-      setInterval(refreshLiveData, LIVE_REFRESH_MS);
+      checkSession();
+      showPage('minecraft');
+      setInterval(() => {
+        if (!appView.classList.contains('hidden')) {
+          refreshLiveData();
+
+          if (!serverPage.classList.contains('hidden')) {
+            refreshServerConsole();
+          }
+        }
+      }, LIVE_REFRESH_MS);
     </script>
   </body>
 </html>
