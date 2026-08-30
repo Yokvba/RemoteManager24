@@ -1,4 +1,4 @@
-1. Put/replace the start.sh & startserver.sh in your server path.
+1. Put/replace the start.sh & startserver.sh in your Minecraft server path.
 2. Then run the following commands giving permission:
 
 sudo chmod +x ./start.sh && sudo chmod +x ./startserver.sh
