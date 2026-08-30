@@ -1,2 +1,3 @@
 ### I have no idea how i pulled this off so don't ask me to change or add anything.
-### Remotely manage your Minecraft(Linux) Server without any plugin, only using screen (open MCServer Dependecies/README.TXT")
+### Remotely manage your Minecraft(Linux) Server without any plugin, only using screen.
+### Also open the README.TXT in the MCServer Dependecies Folder.
