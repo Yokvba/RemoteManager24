@@ -279,10 +279,20 @@ export async function handleRequest(req, res) {
 
       mergeObjects(currentConfig, body);
 
-      // Write updated config back
-      await fs.writeFile(configPath, JSON.stringify(currentConfig, null, 2), 'utf8');
-      
-      sendJson(res, 200, { success: true, message: 'Configuration updated successfully.' });
+      // Write updated config back with proper error handling
+      try {
+        await fs.writeFile(configPath, JSON.stringify(currentConfig, null, 2), 'utf8');
+        sendJson(res, 200, { success: true, message: 'Configuration updated successfully.' });
+      } catch (writeError) {
+        if (writeError.code === 'EACCES') {
+          sendJson(res, 403, { 
+            success: false, 
+            message: `Permission denied writing to ${configPath}. Ensure the Node.js process has write permissions.` 
+          });
+        } else {
+          sendJson(res, 400, { success: false, message: writeError.message });
+        }
+      }
     } catch (error) {
       sendJson(res, 400, { success: false, message: error.message });
     }
